@@ -1,0 +1,707 @@
+@font-face {
+  font-family: "CursorComic";
+  src: url("./Comic Sans MS.ttf") format("truetype");
+  font-weight: normal;
+  font-style: normal;
+}
+
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  overflow: hidden;
+  background: #ffffff;
+  font-family: "CursorComic", "Comic Sans MS", "Comic Sans", system-ui,
+    -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+body {
+  position: relative;
+}
+
+#game {
+  display: block;
+  width: 100vw;
+  height: 100vh;
+}
+
+/* UI overlay */
+
+#ui {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  color: #000;
+}
+
+/* Timer (HUD only) */
+
+#timer {
+  position: absolute;
+  top: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 28px;
+  display: none;
+  pointer-events: none;
+}
+
+/* START SCREEN */
+
+#startScreen {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  pointer-events: auto;
+}
+
+/* Title with slide + trail */
+
+#titleWrapper {
+  position: relative;
+  margin-bottom: 10px;
+  overflow: visible;
+  animation: title-slide-down 0.9s ease-out forwards;
+}
+
+#titleText {
+  font-size: 40px;
+  letter-spacing: 0.06em;
+  text-transform: lowercase;
+  position: relative;
+  z-index: 2;
+  /* simple text shadow trail */
+  text-shadow:
+    0px 0px 0px rgba(0, 0, 0, 0.4),
+    2px 2px 0px rgba(0, 0, 0, 0.25),
+    4px 4px 0px rgba(0, 0, 0, 0.15);
+}
+
+#titleTrail {
+  position: absolute;
+  left: -3px;
+  right: 3px;
+  top: 4px;
+  bottom: -4px;
+  background: rgba(0, 0, 0, 0.06);
+  /* simpler, softer trail */
+  filter: blur(4px);
+  z-index: 1;
+  opacity: 0;
+  animation: title-trail 0.9s ease-out forwards;
+  /* Remove visual trail entirely */
+  display: none;
+}
+
+/* Subtitle typing */
+
+#subtitle {
+  min-height: 1.2em;
+  font-size: 16px;
+  margin-bottom: 18px;
+  white-space: nowrap;
+}
+
+/* Click to begin hell – blinking */
+
+#clickToBegin {
+  font-size: 20px;
+  margin-bottom: 22px;
+  cursor: pointer;
+  user-select: none;
+  /* no animation by default; added via JS */
+}
+
+#clickToBegin.blink {
+  animation: blink 1s steps(2, start) infinite;
+}
+
+/* Death count on start screen */
+
+#deathCount {
+  font-size: 18px;
+  margin-bottom: 18px;
+  font-weight: bold;
+}
+
+/* Leaderboard */
+
+#leaderboard {
+  text-align: center;
+  max-width: 320px;
+  margin-top: 8px;
+}
+
+#leaderboard h2 {
+  margin: 0 0 8px 0;
+  font-size: 18px;
+  position: relative;
+  left: 0; /* align heading with centered list */
+}
+
+.leaderboard-rows {
+  display: flex;
+  flex-direction: row; /* show rows as side-by-side columns */
+  align-items: flex-start;
+  justify-content: center;
+  gap: 8px;
+}
+
+.leaderboard-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 0 0 auto;
+  align-items: center;
+}
+
+.leaderboard-divider {
+  width: 1px;
+  background: rgba(0, 0, 0, 0.15);
+  margin: 0 4px;
+}
+
+.leaderboard-entry {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 14px;
+}
+
+.leaderboard-entry .rank {
+  width: 26px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  display: inline-block;
+}
+
+.leaderboard-entry .avatar {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.leaderboard-entry .name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: left;
+}
+
+.leaderboard-entry .time {
+  font-variant-numeric: tabular-nums;
+  margin-left: 6px;
+  text-align: right;
+}
+
+/* "View full leaderboard" text button */
+
+#viewFullLeaderboardBtn,
+#challengeBtn {
+  pointer-events: auto;
+  display: inline-block;
+  margin-top: 10px;
+  font-size: 14px;
+  cursor: pointer;
+  text-decoration: none;
+  transition: transform 0.15s ease, text-decoration-color 0.15s ease,
+    color 0.15s ease;
+}
+
+#viewFullLeaderboardBtn:hover,
+#challengeBtn:hover {
+  text-decoration: underline;
+  transform: translateY(-5px);
+}
+
+/* Settings button styled like challenge button */
+
+#settingsBtn {
+  pointer-events: auto;
+  display: inline-block;
+  margin-top: 10px;
+  font-size: 14px;
+  cursor: pointer;
+  text-decoration: none;
+  transition: transform 0.15s ease, text-decoration-color 0.15s ease,
+    color 0.15s ease;
+}
+
+#settingsBtn:hover {
+  text-decoration: underline;
+  transform: translateY(-5px);
+}
+
+/* Utility: hide start screen entirely */
+
+.hidden-screen {
+  display: none !important;
+}
+
+/* Full leaderboard modal/tab */
+
+#fullLeaderboardModal {
+  position: fixed;
+  inset: 0;
+  background: rgba(255, 255, 255, 0.98);
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
+  z-index: 20;
+}
+
+#fullLeaderboardContent {
+  width: 100%;
+  max-width: 480px;
+  max-height: 100%;
+  background: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.2);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18);
+  padding: 10px 12px 12px 12px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+#fullLeaderboardHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+#fullLeaderboardTitle {
+  font-size: 18px;
+}
+
+#fullLeaderboardCloseBtn {
+  border: none;
+  background: transparent;
+  font-size: 20px;
+  cursor: pointer;
+  padding: 0 4px;
+}
+
+#fullLeaderboardBody {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  overflow: auto;
+  padding-right: 2px;
+}
+
+#fullLeaderboardTabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 4px;
+}
+
+.flb-tab {
+  flex: 1 1 0;
+  border: 1px solid rgba(0, 0, 0, 0.2);
+  background: #ffffff;
+  padding: 4px 0;
+  font-size: 13px;
+  cursor: pointer;
+  font-family: "CursorComic", "Comic Sans MS", "Comic Sans", system-ui,
+    -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+.flb-tab-active {
+  background: #000;
+  color: #fff;
+}
+
+.full-leaderboard-section-title {
+  font-size: 15px;
+  margin-bottom: 4px;
+  text-align: left;
+}
+
+#fullLeaderboardGlobalSection {
+  /* divider line removed */
+  padding-bottom: 8px;
+}
+
+#fullLeaderboardList {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.full-leaderboard-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+}
+
+.full-leaderboard-row .rank {
+  width: 30px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  display: inline-block;
+}
+
+.full-leaderboard-row .avatar {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.full-leaderboard-row .name {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: left;
+}
+
+.full-leaderboard-row .time {
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+/* Pagination aligned below list */
+
+#fullLeaderboardPagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.flb-page-btn {
+  border: 1px solid rgba(0, 0, 0, 0.3);
+  background: #ffffff;
+  padding: 2px 10px;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.flb-page-btn:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+#fullLeaderboardPageInfo {
+  font-size: 13px;
+}
+
+/* Challenge modal */
+
+#challengeModal {
+  position: fixed;
+  inset: 0;
+  background: rgba(255, 255, 255, 0.98);
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
+  z-index: 21;
+}
+
+#challengeContent {
+  width: 100%;
+  max-width: 480px;
+  max-height: 100%;
+  background: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.2);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18);
+  padding: 10px 12px 12px 12px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+#challengeHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+#challengeTitle {
+  font-size: 18px;
+}
+
+#challengeCloseBtn {
+  border: none;
+  background: transparent;
+  font-size: 20px;
+  cursor: pointer;
+  padding: 0 4px;
+}
+
+#challengeBody {
+  font-size: 14px;
+  line-height: 1.4;
+  overflow-y: auto;
+}
+
+#challengeBody p {
+  margin: 4px 0;
+}
+
+/* Settings modal */
+
+#settingsModal {
+  position: fixed;
+  inset: 0;
+  background: rgba(255, 255, 255, 0.98);
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
+  z-index: 22;
+}
+
+#settingsContent {
+  width: 100%;
+  max-width: 480px;
+  max-height: 100%;
+  background: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.2);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18);
+  padding: 10px 12px 12px 12px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+#settingsHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+#settingsTitle {
+  font-size: 18px;
+}
+
+#settingsCloseBtn {
+  border: none;
+  background: transparent;
+  font-size: 20px;
+  cursor: pointer;
+  padding: 0 4px;
+}
+
+#settingsBody {
+  font-size: 14px;
+  line-height: 1.4;
+  overflow-y: auto;
+  padding-top: 4px;
+}
+
+.settings-section-title {
+  font-weight: bold;
+  margin-top: 10px;
+  margin-bottom: 4px;
+  font-size: 14px;
+}
+
+.settings-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 6px 0;
+}
+
+.settings-label {
+  flex: 1 1 auto;
+  text-align: left;
+}
+
+/* Centered reset button row at bottom of settings */
+.settings-row-reset {
+  justify-content: center;
+  margin-top: 16px;
+}
+
+#settingsBody input[type="range"],
+#settingsBody input[type="checkbox"] {
+  flex: 0 0 auto;
+}
+
+/* Make the timer dropdown (and other selects) look nicer */
+#settingsBody select {
+  flex: 0 0 auto;
+  padding: 4px 8px;
+  border-radius: 4px;
+  border: 1px solid rgba(0, 0, 0, 0.25);
+  background: #ffffff;
+  font-family: inherit;
+  font-size: 14px;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  /* center the selected option text */
+  text-align: center;
+  text-align-last: center;
+}
+
+/* File input rows for music/cursor selection */
+.file-input-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.file-input-row input[type="file"] {
+  display: none;
+}
+
+/* Hide the native music file input so only the custom button is visible */
+#settingsMusicFile {
+  display: none;
+}
+
+.file-btn {
+  padding: 4px 10px;
+  border-radius: 4px;
+  border: 1px solid rgba(0, 0, 0, 0.25);
+  background: #ffffff;
+  font-family: inherit;
+  font-size: 14px;
+  cursor: pointer;
+  white-space: nowrap;
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Death screen overlay */
+
+#deathScreen {
+  position: fixed;
+  inset: 0;
+  background: rgba(255, 255, 255, 0.0);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.8s ease;
+  z-index: 15;
+}
+
+#deathScreen.active {
+  opacity: 1;
+  background: rgba(255, 255, 255, 0.7);
+  pointer-events: auto;
+}
+
+#deathScreenInner {
+  text-align: center;
+  padding: 10px 16px;
+}
+
+#deathTimeLabel {
+  font-size: 18px;
+  margin-bottom: 4px;
+  text-transform: lowercase;
+  font-weight: bold;
+}
+
+#deathTimeValue {
+  font-size: 40px;
+  margin-bottom: 4px;
+  font-weight: bold;
+}
+
+#deathPlace {
+  font-size: 20px;
+  margin-bottom: 8px;
+  font-weight: bold;
+}
+
+#deathMessage {
+  font-size: 18px;
+  min-height: 1.2em;
+  font-weight: bold;
+  margin-bottom: 6px;
+}
+
+#deathClickHint {
+  font-size: 16px;
+  font-weight: bold;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
+
+#deathClickHint.visible {
+  opacity: 1;
+}
+
+/* Animations */
+
+@keyframes title-slide-down {
+  0% {
+    transform: translateY(-80px);
+    opacity: 0;
+  }
+  40% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(0px);
+    opacity: 1;
+  }
+}
+
+@keyframes blink {
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.2;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+/* When we want the start screen back without animations */
+
+.no-anim #titleWrapper,
+.no-anim #titleTrail,
+.no-anim #clickToBegin {
+  animation: none !important;
+}
+
+/* Death mode toggle */
+
+#deathModeWrapper {
+  margin-bottom: 10px;
+  font-size: 14px;
+}
+
+#deathModeLabel {
+  cursor: pointer;
+  user-select: none;
+}
+
+#deathModeCheckbox {
+  margin-right: 6px;
+}
